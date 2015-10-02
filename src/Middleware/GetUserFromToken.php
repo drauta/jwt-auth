@@ -4,6 +4,7 @@ namespace Tymon\JWTAuth\Middleware;
 
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class GetUserFromToken extends BaseMiddleware
 {
@@ -23,7 +24,11 @@ class GetUserFromToken extends BaseMiddleware
         try {
             $user = $this->auth->authenticate($token);
         } catch (TokenExpiredException $e) {
-            return $this->respond('tymon.jwt.expired', 'token_expired', $e->getStatusCode(), [$e]);
+      			$newToken = JWTAuth::refresh();
+      			$response = $next($request);
+      			$response->headers->set('Authorization', 'Bearer ' . $newToken);
+      			return $response;
+            //return $this->respond('tymon.jwt.expired', 'token_expired', $e->getStatusCode(), [$e]);
         } catch (JWTException $e) {
             return $this->respond('tymon.jwt.invalid', 'token_invalid', $e->getStatusCode(), [$e]);
         }
